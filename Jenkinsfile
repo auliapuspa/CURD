@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    options {
+        skipDefaultCheckout(true)
+    }
+
     stages {
 
         stage('Checkout Code') {
@@ -11,9 +15,9 @@ pipeline {
 
         stage('Load ENV File') {
             steps {
-                withCredentials([file(credentialsId: 'DOTENV_FILE', variable: 'DOTENV_FILE')]) {
+                withCredentials([file(credentialsId: 'DOTENV_FILE', variable: 'ENV_FILE')]) {
                     bat '''
-                    copy %DOTENV_FILE% .env
+                    copy "%ENV_FILE%" .env
                     '''
                 }
             }
@@ -21,19 +25,19 @@ pipeline {
 
         stage('Stop Old Containers') {
             steps {
-                bat 'docker-compose down'
+                bat 'docker compose down'
             }
         }
 
         stage('Build Containers') {
             steps {
-                bat 'docker-compose build'
+                bat 'docker compose build'
             }
         }
 
         stage('Start Containers') {
             steps {
-                bat 'docker-compose up -d'
+                bat 'docker compose up -d'
             }
         }
 
