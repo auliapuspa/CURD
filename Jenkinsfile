@@ -1,44 +1,42 @@
 pipeline {
     agent any
 
-    environment {
-        ENV_FILE = '.env'
-    }
-
     stages {
 
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/auliapuspa/CURD.git'
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Load ENV File') {
             steps {
-                bat 'npm install'
+                withCredentials([file(credentialsId: 'DOTENV_FILE', variable: 'DOTENV_FILE')]) {
+                    bat '''
+                    copy %DOTENV_FILE% .env
+                    '''
+                }
             }
         }
 
-        stage('Build') {
+        stage('Stop Old Containers') {
             steps {
-                bat 'npm run build'
+                bat 'docker-compose down'
             }
         }
 
-        stage('Test') {
+        stage('Build Containers') {
             steps {
-                bat 'npm test'
+                bat 'docker-compose build'
             }
         }
 
-        stage('Run Server') {
+        stage('Start Containers') {
             steps {
-                bat '''
-                for /f "delims=" %%i in (%ENV_FILE%) do set %%i
-                start npm start
-                '''
+                bat 'docker-compose up -d'
             }
         }
+
     }
 
     post {
@@ -46,10 +44,10 @@ pipeline {
             echo 'Pipeline finished.'
         }
         success {
-            echo 'Build succeeded!'
+            echo 'Containers running successfully!'
         }
         failure {
-            echo 'Build failed!'
+            echo 'Pipeline failed!'
         }
     }
 }
